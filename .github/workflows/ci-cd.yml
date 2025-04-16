@@ -6,7 +6,7 @@ on:
       - main  # Trigger pipeline on pushes to 'main' branch
   pull_request:
     branches:
-      - main  # Optional: Trigger pipeline on pull requests to 'main'
+      - main  # Trigger pipeline on pull requests to 'main'
 
 jobs:
   build:
@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.9'  # Ensure Python 3.9 is installed
 
     - name: Install Dependencies
       run: |
@@ -28,19 +28,25 @@ jobs:
 
     - name: Run Unit Tests
       run: |
-        # Add specific test commands for your project
+        echo "Running tests..."
         pytest tests/
 
     - name: Build Docker Image
       run: |
+        echo "Building Docker image..."
         docker build -t smart-energy-app .
 
     - name: Run Docker Container Test
       run: |
-        docker run -d -p 5000:5000 smart-energy-app
+        echo "Running Docker container for testing..."
+        docker run -d --name smart-energy-container -p 5000:5000 smart-energy-app
+        echo "Testing application availability..."
         curl --fail http://localhost:5000 || exit 1
 
     - name: Clean Up Docker Container
+      if: always()  # Ensure cleanup happens regardless of success or failure
       run: |
-        docker stop $(docker ps -q)
-        docker rm $(docker ps -aq)
+        echo "Stopping and removing Docker container..."
+        docker stop smart-energy-container || echo "Container already stopped."
+        docker rm smart-energy-container || echo "Container already removed."
+        docker rmi smart-energy-app || echo "Image already removed."
