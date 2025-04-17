@@ -1,0 +1,41 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]  # triggers when you push to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Set up SSH key for EC2
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.EC2_KEY }}
+
+    - name: Deploy to EC2
+      run: |
+        echo "Deploying to EC2 instance..."
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          cd /home/ubuntu/DevOps-Project || exit 1
+          git pull origin main || exit 1  # Make sure to pull latest code from the repo
+          source venv/bin/activate || exit 1  # Activate the Python virtual environment
+          pip install -r requirements.txt || exit 1  # Install any new dependencies
+          nohup python app.py &  # Run your application in the background
+          exit 0
+        EOF
+
