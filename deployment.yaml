@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: energy-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energy-dashboard
+  template:
+    metadata:
+      labels:
+        app: energy-dashboard
+    spec:
+      containers:
+      - name: energy-container
+        image: hrishikaraj2725/2048:latest
+        ports:
+        - containerPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: energy-service
+spec:
+  selector:
+    app: energy-dashboard
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
